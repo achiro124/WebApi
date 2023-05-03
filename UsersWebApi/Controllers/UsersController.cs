@@ -4,11 +4,20 @@
     [ApiController]
     public class UsersController : ControllerBase
     {
+
+        private readonly ApplicationDbContext _context;
+        public UsersController(ApplicationDbContext context) 
+        {
+            _context = context;
+        }
+
+
+
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<IEnumerable<UserDTO>> GetUsers()
         {
-            return Ok(UsersDb.userList);
+            return Ok(_context.Users.ToList());
         }
 
         [HttpGet("login", Name ="GetUser")]
@@ -16,7 +25,7 @@
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public ActionResult<UserDTO> GetUser(string login)
         {
-            var user = UsersDb.userList.FirstOrDefault(u => u.Login == login);
+            var user = _context.Users.FirstOrDefault(u => u.Login == login);
             if(user == null)
             {
                 return NotFound();
@@ -34,14 +43,19 @@
                 return BadRequest(userDTO);
             }
 
-            if (UsersDb.userList.FirstOrDefault(u => u.Login.ToLower() == userDTO.Login.ToLower()) != null)
+            if (_context.Users.FirstOrDefault(u => u.Login.ToLower() == userDTO.Login.ToLower()) != null)
             {
                 ModelState.AddModelError("CustomError","User alredy Exists!");
                 return BadRequest(ModelState);
             }
+            User user = new()
+            {
+                Id = Guid.NewGuid(),
+                Login = userDTO.Login,
+                Password = userDTO.Password,
 
-            //userDTO.Id = Guid.NewGuid();
-            UsersDb.userList.Add(userDTO);
+            };
+            _context.Users.Add(user);
 
             return CreatedAtRoute("GetUser", new {login = userDTO.Login}, userDTO);
         }
