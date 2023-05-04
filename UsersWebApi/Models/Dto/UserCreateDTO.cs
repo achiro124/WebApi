@@ -1,6 +1,6 @@
 ﻿namespace UsersWebApi.Models.Dto
 {
-    public class UserDTO
+    public class UserCreateDTO
     {
         [Required]
         [MaxLength(30)]
@@ -9,5 +9,6 @@
         public string Name { get; set; } = string.Empty;
         public int Gender { get; set; }
         public DateTime? Birthday { get; set; }
+        public bool Admin { get; set; }
     }
 }

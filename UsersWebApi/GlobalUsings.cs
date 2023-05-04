@@ -6,3 +6,8 @@ global using System.ComponentModel.DataAnnotations;
 global using Microsoft.AspNetCore.JsonPatch;
 global using UsersWebApi.Data;
 global using System.ComponentModel.DataAnnotations.Schema;
+global using UsersWebApi.Repository.IRepository;
+global using System.IdentityModel.Tokens.Jwt;
+global using System.Text;
+global using UsersWebApi.Repository;
+global using Microsoft.AspNetCore.Authentication.JwtBearer;
