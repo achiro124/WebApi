@@ -12,7 +12,7 @@ using UsersWebApi.Data;
 namespace UsersWebApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230503172623_AddUserTable")]
+    [Migration("20230506112110_AddUserTable")]
     partial class AddUserTable
     {
         /// <inheritdoc />
@@ -41,7 +41,7 @@ namespace UsersWebApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreatedOn")
+                    b.Property<DateTime?>("CreatedOn")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("Gender")
@@ -55,7 +55,7 @@ namespace UsersWebApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("ModifiedOn")
+                    b.Property<DateTime?>("ModifiedOn")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
@@ -70,12 +70,28 @@ namespace UsersWebApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("RevokedOn")
+                    b.Property<DateTime?>("RevokedOn")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("b951c01c-39fc-4d95-92dd-f7c70351a462"),
+                            Admin = true,
+                            Birthday = new DateTime(2001, 8, 9, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedBy = "",
+                            CreatedOn = new DateTime(2023, 5, 6, 14, 21, 10, 548, DateTimeKind.Local).AddTicks(7478),
+                            Gender = 1,
+                            Login = "Admin",
+                            ModifiedBy = "",
+                            Name = "Admin",
+                            Password = "123",
+                            RevokedBy = ""
+                        });
                 });
 #pragma warning restore 612, 618
         }

@@ -1,7 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Net;
-
-namespace UsersWebApi.Controllers
+﻿namespace UsersWebApi.Controllers
 {
     [Route("api/Users/UsersAuth")]
     [ApiController]

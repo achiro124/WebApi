@@ -9,7 +9,6 @@ namespace UsersWebApi.Repository
     {
         private readonly ApplicationDbContext _context;
         private string secretKey;
-        private User authUser;
         public UserRepository(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
@@ -24,10 +23,10 @@ namespace UsersWebApi.Repository
 
         public async Task<LoginResponseDTO> Login(LoginRequestDTO loginRequestDTO)
         {
-            var user = _context.Users.FirstOrDefault(u => u.Login.ToLower() == loginRequestDTO.Login.ToLower() &&
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Login.ToLower() == loginRequestDTO.Login.ToLower() &&
             u.Password == loginRequestDTO.Password);
 
-            if (user == null)
+            if (user == null || user.RevokedOn != null)
             {
                 return new LoginResponseDTO()
                 {
@@ -38,13 +37,14 @@ namespace UsersWebApi.Repository
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(secretKey);
+            string role = user.Admin ? "Admin" : "User";
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new System.Security.Claims.ClaimsIdentity(new Claim[]
+                Subject = new ClaimsIdentity(new Claim[]
                 {
-                    new Claim(ClaimTypes.Name, user.Id.ToString()),
-                    new Claim(ClaimTypes.Role, user.Admin.ToString())
+                    new Claim(ClaimTypes.Name, user.Login.ToString()),
+                    new Claim(ClaimTypes.Role, role)
                 }),
                 Expires = DateTime.UtcNow.AddDays(7),
                 SigningCredentials = new(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -57,8 +57,7 @@ namespace UsersWebApi.Repository
                 Token = tokenHandler.WriteToken(token),
                 User = user
             };
-
-            authUser = user;
+            
             return loginResponseDTO;
         }
 
@@ -80,9 +79,27 @@ namespace UsersWebApi.Repository
             return user;
         }
 
-        public async Task<User> GetUserAsync(string login) => await _context.Users.FirstOrDefaultAsync(x => x.Login == login);
+        public async Task<UserSearchDTO?> GetUserAsync(string login)
+        {
+            User? user = await _context.Users.FirstOrDefaultAsync(u => u.Login == login);
+            if (user == null)
+            {
+                return null;
+            }
+            UserSearchDTO userSearchDTO = new()
+            {
+                Name = user.Name,
+                Gender = user.Gender,
+                Birthday = user.Birthday,
+                IsActive = user.RevokedOn == DateTime.MinValue
+            };
+            return userSearchDTO;
+        }
 
-        public async Task<User> CreateAsync(UserCreateDTO userCreateDTO)
+        public async Task<User?> GetUserAsync(string login, string password) => await _context.Users.FirstOrDefaultAsync(u => u.Login == login &&
+                                                                                                                              u.Password == password);
+      
+        public async Task<User> CreateAsync(UserCreateDTO userCreateDTO, string authUserLogin)
         {
             User user = new User()
             {
@@ -94,12 +111,38 @@ namespace UsersWebApi.Repository
                 Gender = userCreateDTO.Gender,
                 Birthday = userCreateDTO.Birthday,
                 CreatedOn = DateTime.Now,
-                //CreatedBy = authUser.Login
+                CreatedBy = authUserLogin
             };
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
             return user;
         }
 
+        public async Task<List<User>> GetUsersAsync() => await _context.Users.Where(u => u.RevokedOn == null)
+                                                                             .OrderBy(u => u.CreatedOn).ToListAsync();
+
+        public async Task<List<User>> GetUsersOnAgeAsync(int age)
+        {
+            List<User> users = new List<User>();
+            foreach(var user in _context.Users)
+            {
+                DateTime birthday = (DateTime)user.Birthday;
+                if(birthday != DateTime.MinValue)
+                {
+                    int userAge = DateTime.Now.Year - birthday.Year;
+                    if (birthday.AddYears(userAge) > DateTime.Now)
+                    {
+                        userAge--;
+                    }
+
+                    if(userAge > age)
+                    {
+                        users.Add(user);
+                    }
+                }
+                
+            }
+            return users;
+        }
     }
 }

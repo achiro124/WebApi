@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc.ApiExplorer;
-using Microsoft.EntityFrameworkCore;
-using System.Net;
+﻿using System.Security.Claims;
 
 namespace UsersWebApi.Controllers
 {
@@ -9,38 +6,86 @@ namespace UsersWebApi.Controllers
     [ApiController]
     public class UsersController : Controller
     {
-
         protected APIResponse _response;
         private readonly IUserRepository _userRepository;
-        public UsersController(IUserRepository userRepository) 
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        //Логин авторизовавшегося пользователя
+        private readonly string? userLogin;
+
+        public UsersController(IUserRepository userRepository, IHttpContextAccessor httpContextAccessor) 
         {
             _userRepository= userRepository;
             _response = new();
+            _httpContextAccessor = httpContextAccessor;
+            userLogin = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Name)?.Value;
         }
 
-      //  [HttpGet]
-      //  [ProducesResponseType(StatusCodes.Status200OK)]
-      //  public ActionResult<IEnumerable<UserCreateDTO>> GetUsers()
-      //  {
-      //      return Ok(_context.Users.ToList());
-      //  }
-      //
+        [HttpGet(Name ="GetAllUser")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+
+        public async Task<ActionResult<APIResponse>> GetUsers()
+        {
+            try
+            {
+                _response.Result = await _userRepository.GetUsersAsync();
+                _response.StatusCode = HttpStatusCode.OK;
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                     = new List<string>() { ex.ToString() };
+            }
+            return _response;
+        }
+
+        [HttpGet("age",Name = "GetAllUserOnAge")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+
+        public async Task<ActionResult<APIResponse>> GetUsersOnAge(int age)
+        {
+            try
+            {
+                _response.Result = await _userRepository.GetUsersOnAgeAsync(age);
+                _response.StatusCode = HttpStatusCode.OK;
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                     = new List<string>() { ex.ToString() };
+            }
+            return _response;
+        }
+
         [HttpGet("login", Name ="GetUser")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<APIResponse>> GetUser(string login)
         {
             try
             {
-                User user = await _userRepository.GetUserAsync(login);
+                UserSearchDTO? user = await _userRepository.GetUserAsync(login);
                 if (user == null)
                 {
                     _response.StatusCode = HttpStatusCode.NotFound;
                     return NotFound(_response);
                 }
-                //_response.Result = user;
-                //_response.StatusCode = HttpStatusCode.OK;
-                return Ok(user);
+                _response.Result = user;
+                _response.StatusCode = HttpStatusCode.OK;
+                return Ok(_response);
                                 
             }
             catch (Exception ex)
@@ -52,11 +97,48 @@ namespace UsersWebApi.Controllers
             
         }
 
+        [HttpGet("login/password", Name = "GetUserByLoginAndPassword")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<APIResponse>> GetUser(string login, string password)
+        {
+            try
+            {
+                if(login != userLogin)
+                {
+                    ModelState.AddModelError("CustomError", "Login error!");
+                    return BadRequest(ModelState);
+                }
+                var user = await _userRepository.GetUserAsync(login,password);
+                if (user == null)
+                {
+                    _response.StatusCode = HttpStatusCode.NotFound;
+                    return NotFound(_response);
+                }
+                _response.Result = user;
+                _response.StatusCode = HttpStatusCode.OK;
+                return Ok(_response);
+
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages = new List<string>() { ex.ToString() };
+                return _response;
+            }
+
+        }
+
         [HttpPost]
-        //[Authorize(Roles = "true")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<APIResponse>> CreateUser([FromBody] UserCreateDTO createDTO)
         {
             try
@@ -78,7 +160,7 @@ namespace UsersWebApi.Controllers
                     return BadRequest(ModelState);
                 }
 
-                User user = await _userRepository.CreateAsync(createDTO);
+                User? user = await _userRepository.CreateAsync(createDTO, userLogin);
                 if(user == null)
                 {
                     return BadRequest(user);
