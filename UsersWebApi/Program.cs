@@ -2,10 +2,18 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Security.Cryptography;
+using System.Text.Json.Serialization;
+using UsersWebApi;
+using System.Text.Json;
+using Newtonsoft.Json.Converters;
+using System.Reflection;
+using Newtonsoft.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+
 
 builder.Services.AddDbContext<ApplicationDbContext>(option =>
 {
@@ -15,11 +23,16 @@ builder.Services.AddDbContext<ApplicationDbContext>(option =>
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddControllers().AddNewtonsoftJson();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+
+   // var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+   // var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+   // options.IncludeXmlComments(xmlPath);
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description =
@@ -49,6 +62,10 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+builder.Services.AddControllers().AddNewtonsoftJson(options =>
+        options.SerializerSettings.Converters.Add(new StringEnumConverter()));
+builder.Services.AddSwaggerGenNewtonsoftSupport();
+
 
 var key = builder.Configuration.GetValue<string>("ApiSettings:Secret");
 
@@ -68,7 +85,11 @@ builder.Services.AddAuthentication(x =>
         ValidateAudience = false
     };
 });
+
+
+
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

@@ -26,7 +26,7 @@ namespace UsersWebApi.Repository
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Login.ToLower() == loginRequestDTO.Login.ToLower() &&
             u.Password == loginRequestDTO.Password);
 
-            if (user == null || user.RevokedOn != null)
+            if (user == null)
             {
                 return new LoginResponseDTO()
                 {
@@ -143,6 +143,37 @@ namespace UsersWebApi.Repository
                 
             }
             return users;
+        }
+
+        public async Task<User> DeleteUserSoftAsync(string login, string adminLogin)
+        {
+            User? user = await _context.Users.FirstOrDefaultAsync(u => u.Login == login);
+            if(user == null) return null;
+            user.RevokedBy = adminLogin;
+            user.RevokedOn = DateTime.Now;
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+            return user;
+        }
+
+        public async Task<User> DeleteUserHardAsync(string login)
+        {
+            User? user = await _context.Users.FirstOrDefaultAsync(u => u.Login == login);
+            if(user == null) return null;
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+            return user;
+        }
+
+        public async Task<User> RecoveryUserAsync(string login)
+        {
+            User? user = await _context.Users.FirstOrDefaultAsync(u => u.Login == login);
+            if (user == null) return null;
+            user.RevokedBy = "";
+            user.RevokedOn = null;
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+            return user;
         }
     }
 }

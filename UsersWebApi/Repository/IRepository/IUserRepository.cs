@@ -10,6 +10,9 @@
         Task<User> CreateAsync(UserCreateDTO userCreateDTO,string authUserLogin);
         Task<List<User>> GetUsersAsync();
         Task<List<User>> GetUsersOnAgeAsync(int age);
+        Task<User> DeleteUserSoftAsync(string login, string loginAdmin);
+        Task<User> DeleteUserHardAsync(string login);
+        Task<User> RecoveryUserAsync(string login);
 
     }
 }

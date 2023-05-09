@@ -24,6 +24,13 @@
                 _response.ErrorMessages.Add("Username or password is incorrect");
                 return BadRequest(_response);
             }
+            if(loginResponse.User.RevokedOn != null)
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.IsSuccess = false;
+                _response.ErrorMessages.Add("User deleted");
+                return BadRequest(_response);
+            }
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
             _response.Result = loginResponse;

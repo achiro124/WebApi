@@ -1,4 +1,6 @@
 ﻿using System.Security.Claims;
+using UsersWebApi.Models;
+using UsersWebApi.Repository;
 
 namespace UsersWebApi.Controllers
 {
@@ -11,7 +13,7 @@ namespace UsersWebApi.Controllers
         private readonly IHttpContextAccessor _httpContextAccessor;
 
         //Логин авторизовавшегося пользователя
-        private readonly string? userLogin;
+        private readonly string userLogin = "";
 
         public UsersController(IUserRepository userRepository, IHttpContextAccessor httpContextAccessor) 
         {
@@ -134,11 +136,9 @@ namespace UsersWebApi.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<APIResponse>> CreateUser([FromBody] UserCreateDTO createDTO)
         {
             try
@@ -179,61 +179,65 @@ namespace UsersWebApi.Controllers
 
         }
 
-      //  [HttpDelete("login", Name ="DeleteUser")]
-      //  [ProducesResponseType(StatusCodes.Status204NoContent)]
-      //  [ProducesResponseType(StatusCodes.Status404NotFound)]
-      //  public IActionResult DeleteUser(string login)
-      //  {
-      //      var user = _context.Users.FirstOrDefault(u => u.Login == login);
-      //      if (user == null)
-      //      {
-      //          return NotFound();
-      //      }
-      //      _context.Users.Remove(user);
-      //      _context.SaveChanges();
-      //      return NoContent();
-      //  }
-      //
-      //  [HttpPut("login", Name = "UpdateUser")]
-      //  [ProducesResponseType(StatusCodes.Status400BadRequest)]
-      //  [ProducesResponseType(StatusCodes.Status204NoContent)]
-      //  [ProducesResponseType(StatusCodes.Status404NotFound)]
-      //  public IActionResult UpdateUser(string login, [FromBody] UserDTO userDTO)
-      //  {
-      //     if(userDTO == null)
-      //     {
-      //         return BadRequest();
-      //     }
-      //    
-      //     //if (_context.Users.FirstOrDefault(u => u.Login.ToLower() == userDTO.Login.ToLower()) != null)
-      //     //{
-      //     //    ModelState.AddModelError("CustomError", "User login alredy Exists!");
-      //     //    return BadRequest(ModelState);
-      //     //}
-      //    
-      //     var user = _context.Users.FirstOrDefault(u => u.Login == login);
-      //     if(user == null)
-      //     {
-      //         return NotFound();
-      //     }
-      //    
-      //     User updUser = new()
-      //     {
-      //         Id = user.Id,
-      //         Login = userDTO.Login,
-      //         Password = userDTO.Password,
-      //         Name = userDTO.Name,
-      //         Gender = userDTO.Gender,
-      //         Birthday = userDTO.Birthday,
-      //         ModifiedOn = DateTime.Now
-      //     };
-      //    
-      //     _context.Users.Update(updUser);
-      //     _context.SaveChanges();
-      //    
-      //     return NoContent();
-      //
-      //  }
+        [HttpDelete("delete", Name ="DeleteUser")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<APIResponse>> DeleteUser(string login, DeletedType deletedType)
+        {
+            try
+            {
+
+                User? user = null;
+                if (deletedType == DeletedType.soft)
+                {
+                    user = await _userRepository.DeleteUserSoftAsync(login, userLogin);
+                }
+                if (deletedType == DeletedType.hard)
+                {
+                    user = await _userRepository.DeleteUserHardAsync(login);
+                }
+
+                if (user == null)
+                {
+                    return NotFound();
+                }
+                _response.StatusCode = HttpStatusCode.NoContent;
+                _response.IsSuccess = true;
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                     = new List<string>() { ex.ToString() };
+                return _response;
+            }
+   
+        }   
+      
+        [HttpPut("recovery", Name = "RecoveryUser")]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<APIResponse>> UpdateUser(string login)
+        {
+            try
+            {
+                User? user = await _userRepository.RecoveryUserAsync(login);
+                if (user == null)
+                {
+                    return NotFound();
+                }
+                _response.StatusCode = HttpStatusCode.NoContent;
+                _response.IsSuccess = true;
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                     = new List<string>() { ex.ToString() };
+                return _response;
+            }
+        }
 
      //   [HttpPut("login", Name = "UpdatePartialUser")]
      //   [ProducesResponseType(StatusCodes.Status400BadRequest)]
