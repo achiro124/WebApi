@@ -40,7 +40,7 @@
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegistrationRequestDTO model)
         {
-            bool ifLoginNameUnique = _userRepo.IsUniqueUser(model.Login);
+            bool ifLoginNameUnique = _userRepo.IsUniqueLogin(model.Login);
             if (!ifLoginNameUnique)
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;

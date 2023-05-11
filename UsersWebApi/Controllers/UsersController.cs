@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using Microsoft.AspNetCore.JsonPatch;
+using System.Security.Claims;
 using UsersWebApi.Models;
 using UsersWebApi.Repository;
 
@@ -74,13 +75,13 @@ namespace UsersWebApi.Controllers
             return _response;
         }
 
-        [HttpGet("userSearch/{login}", Name ="GetUser")]
+        [HttpGet("admin/login", Name ="GetUser")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<APIResponse>> GetUser(string login)
+        public async Task<ActionResult<APIResponse>> GetUser([FromBody] string login)
         {
             try
             {
@@ -104,22 +105,22 @@ namespace UsersWebApi.Controllers
             
         }
 
-        [HttpGet("{login}", Name = "GetUserByLoginAndPassword")]
+        [HttpGet("login", Name = "GetUserByLoginAndPassword")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<APIResponse>> GetUser(string login, string password)
+        public async Task<ActionResult<APIResponse>> GetUser([FromBody] UserDTO userDTO)
         {
             try
             {
-                if(login != authUserLogin)
+                if(userDTO.Login != authUserLogin)
                 {
                     ModelState.AddModelError("CustomError", "Login error!");
                     return BadRequest(ModelState);
                 }
-                var user = await _userRepository.GetUserAsync(login,password);
+                var user = await _userRepository.GetUserAsync(userDTO);
                 if (user == null)
                 {
                     _response.StatusCode = HttpStatusCode.NotFound;
@@ -142,7 +143,7 @@ namespace UsersWebApi.Controllers
 
         //POST
 
-        [HttpPost]
+        [HttpPost(Name = "CreateUser")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -162,7 +163,7 @@ namespace UsersWebApi.Controllers
                 }
 
 
-                if (await _userRepository.GetUserAsync(createDTO.Login) != null)
+                if (!_userRepository.IsUniqueLogin(createDTO.Login))
                 {
                     ModelState.AddModelError("CustomError", "User alredy Exists!");
                     return BadRequest(ModelState);
@@ -190,7 +191,7 @@ namespace UsersWebApi.Controllers
 
         //PUT
 
-        [HttpPut("login",Name = "UpdateUser")]
+        [HttpPut(Name = "UpdateUser")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<APIResponse>> UpdateUser(UserUpdateDTO userUpdate)
@@ -215,7 +216,7 @@ namespace UsersWebApi.Controllers
             }
         }
 
-        [HttpPut("admin/login",Name = "UpdateUserByAdmin")]
+        [HttpPut("admin/{login}",Name = "UpdateUserByAdmin")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<APIResponse>> UpdateUserByAdmin(string login,UserUpdateDTO userUpdate)
@@ -243,7 +244,7 @@ namespace UsersWebApi.Controllers
         [HttpPut("password",Name = "UpdatePassword")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<APIResponse>> UpdatePassword(string newPassword)
+        public async Task<ActionResult<APIResponse>> UpdatePassword([FromBody]string newPassword)
         {
             try
             {
@@ -268,11 +269,11 @@ namespace UsersWebApi.Controllers
         [HttpPut("admin/password", Name = "UpdatePasswordByAdmin")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<APIResponse>> UpdatePassword(string login,string newPassword)
+        public async Task<ActionResult<APIResponse>> UpdatePassword(UserUpdatePasswordDTO userUpdatePasswordDTO)
         {
             try
             {
-                User? user = await _userRepository.UpdatePasswordAsync(login, newPassword, authUserLogin);
+                User? user = await _userRepository.UpdatePasswordAsync(userUpdatePasswordDTO.Login, userUpdatePasswordDTO.NewPassword, authUserLogin);
                 if (user == null)
                 {
                     return NotFound();
@@ -290,10 +291,76 @@ namespace UsersWebApi.Controllers
             }
         }
 
-        [HttpPut("{login}", Name = "RecoveryUser")]
+
+        [HttpPut("login", Name = "UpdateLogin")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<APIResponse>> UpdateLogin([FromBody] string newLogin)
+        {
+            try
+            {
+                if (_userRepository.IsUniqueLogin(newLogin))
+                {
+                    ModelState.AddModelError("CustomError", "User alredy Exists!");
+                    return BadRequest(ModelState);
+                }
+
+                User? user = await _userRepository.UpdateLoginAsync(newLogin);
+                if (user == null)
+                {
+                    return NotFound();
+                }
+                _response.StatusCode = HttpStatusCode.NoContent;
+                _response.IsSuccess = true;
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                     = new List<string>() { ex.ToString() };
+                return _response;
+            }
+        }
+
+      //  [HttpPut("login", Name = "UpdateLogin")]
+      //  [Authorize]
+      //  [ProducesResponseType(StatusCodes.Status404NotFound)]
+      //  [ProducesResponseType(StatusCodes.Status400BadRequest)]
+      //  public async Task<ActionResult<APIResponse>> UpdateLoginByAdmin(string login,[FromBody] string newLogin)
+      //  {
+      //      try
+      //      {
+      //          if (_userRepository.IsUniqueLogin(newLogin))
+      //          {
+      //              ModelState.AddModelError("CustomError", "User alredy Exists!");
+      //              return BadRequest(ModelState);
+      //          }
+      //
+      //          User? user = await _userRepository.UpdateLoginAsync(newLogin);
+      //          if (user == null)
+      //          {
+      //              return NotFound();
+      //          }
+      //          _response.StatusCode = HttpStatusCode.NoContent;
+      //          _response.IsSuccess = true;
+      //          return Ok(_response);
+      //      }
+      //      catch (Exception ex)
+      //      {
+      //          _response.IsSuccess = false;
+      //          _response.ErrorMessages
+      //               = new List<string>() { ex.ToString() };
+      //          return _response;
+      //      }
+      //  }
+
+
+        [HttpPut("recovery", Name = "RecoveryUser")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<APIResponse>> RecoveryUser(string login)
+        public async Task<ActionResult<APIResponse>> RecoveryUser([FromBody] string login)
         {
             try
             {
@@ -318,10 +385,10 @@ namespace UsersWebApi.Controllers
 
         //DELETE
 
-        [HttpDelete("{login}", Name ="DeleteUser")]
+        [HttpDelete("admin/login", Name ="DeleteUser")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<APIResponse>> DeleteUser(string login, DeletedType deletedType)
+        public async Task<ActionResult<APIResponse>> DeleteUser([FromBody] string login, DeletedType deletedType)
         {
             try
             {

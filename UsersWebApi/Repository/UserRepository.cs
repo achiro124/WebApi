@@ -15,7 +15,7 @@ namespace UsersWebApi.Repository
             secretKey = configuration.GetValue<string>("ApiSettings:Secret");
         }
 
-        public bool IsUniqueUser(string login)
+        public bool IsUniqueLogin(string login)
         {
             var user = _context.Users.FirstOrDefault(u => u.Login == login);
             return user == null;
@@ -99,8 +99,8 @@ namespace UsersWebApi.Repository
             return userSearchDTO;
         }
 
-        public async Task<User?> GetUserAsync(string login, string password) => await _context.Users.FirstOrDefaultAsync(u => u.Login == login &&
-                                                                                                                              u.Password == password);
+        public async Task<User?> GetUserAsync(UserDTO userDTO) => await _context.Users.FirstOrDefaultAsync(u => u.Login == userDTO.Login &&
+                                                                                                                              u.Password == userDTO.Password);
 
         public async Task<List<User>> GetUsersAsync() => await _context.Users.Where(u => u.RevokedOn == null)
                                                                      .OrderBy(u => u.CreatedOn).ToListAsync();
@@ -187,6 +187,19 @@ namespace UsersWebApi.Repository
             return user;
         }
 
+        public async Task<User> UpdateLoginAsync(string login, string? loginAdmin = null)
+        {
+            User? user = await _context.Users.FirstOrDefaultAsync(u => u.Login == login);
+            if (user == null) return null;
+
+            user.Login = login;
+            user.ModifiedBy = loginAdmin == null ? login : loginAdmin;
+            user.ModifiedOn = DateTime.Now;
+            _context.Update(user);
+            await _context.SaveChangesAsync();
+            return user;
+        }
+
         public async Task<User> RecoveryUserAsync(string login)
         {
             User? user = await _context.Users.FirstOrDefaultAsync(u => u.Login == login);
@@ -219,6 +232,7 @@ namespace UsersWebApi.Repository
             await _context.SaveChangesAsync();
             return user;
         }
+
 
     }
 }
