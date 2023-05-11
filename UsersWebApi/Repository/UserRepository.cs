@@ -187,12 +187,12 @@ namespace UsersWebApi.Repository
             return user;
         }
 
-        public async Task<User> UpdateLoginAsync(string login, string? loginAdmin = null)
+        public async Task<User> UpdateLoginAsync(string login, string newLogin, string? loginAdmin = null)
         {
             User? user = await _context.Users.FirstOrDefaultAsync(u => u.Login == login);
             if (user == null) return null;
 
-            user.Login = login;
+            user.Login = newLogin;
             user.ModifiedBy = loginAdmin == null ? login : loginAdmin;
             user.ModifiedOn = DateTime.Now;
             _context.Update(user);

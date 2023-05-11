@@ -18,7 +18,7 @@
         //PUT
         Task<User> UpdateUserAsync(string login, UserUpdateDTO userUpdateDTO, string? loginAdmin = null);
         Task<User> UpdatePasswordAsync(string login, string password, string? loginAdmin = null);
-        Task<User> UpdateLoginAsync(string login, string? loginAdmin = null);
+        Task<User> UpdateLoginAsync(string login, string newLogin, string? loginAdmin = null);
         Task<User> RecoveryUserAsync(string login);
 
         //DELETE

@@ -1,5 +1,9 @@
 ﻿namespace UsersWebApi.Controllers
 {
+    /// <summary>
+    /// Контроллер для авторизации и регистрации пользователей
+    /// </summary>
+    /// 
     [Route("api/Users/UsersAuth")]
     [ApiController]
     public class AuthUsersController : Controller
@@ -7,13 +11,24 @@
         private readonly IUserRepository _userRepo;
         private APIResponse _response;
 
-        public AuthUsersController(ApplicationDbContext context, IUserRepository userRepo)
+
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        public AuthUsersController(IUserRepository userRepo)
         {
             _userRepo = userRepo;
             this._response = new();
         }
 
+        /// <summary>
+        /// Авторизация пользователя
+        /// </summary>
+
+
         [HttpPost("login")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO model)
         {
             var loginResponse = await _userRepo.Login(model);
@@ -37,7 +52,13 @@
             return Ok(_response);
         }
 
+        /// <summary>
+        /// Регистрация пользователя
+        /// </summary>
+
         [HttpPost("register")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Register([FromBody] RegistrationRequestDTO model)
         {
             bool ifLoginNameUnique = _userRepo.IsUniqueLogin(model.Login);

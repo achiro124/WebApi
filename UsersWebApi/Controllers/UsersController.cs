@@ -1,21 +1,31 @@
-﻿using Microsoft.AspNetCore.JsonPatch;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.JsonPatch;
 using System.Security.Claims;
 using UsersWebApi.Models;
 using UsersWebApi.Repository;
 
 namespace UsersWebApi.Controllers
 {
+
+    /// <summary>
+    /// Контроллер для обработки запросов пользователей.
+    /// </summary>
+
+
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : Controller
     {
-        protected APIResponse _response;
+        private APIResponse _response;
         private readonly IUserRepository _userRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
         //Логин авторизовавшегося пользователя
         private readonly string authUserLogin = "";
 
+        /// <summary>
+        /// Конструктор
+        /// </summary>
         public UsersController(IUserRepository userRepository, IHttpContextAccessor httpContextAccessor) 
         {
             _userRepository= userRepository;
@@ -28,13 +38,15 @@ namespace UsersWebApi.Controllers
 
 
         //GET
+        /// <summary>
+        /// Получение списка активных пользователей. Доступно админам.
+        /// </summary>
+        /// <returns></returns>
 
-        [HttpGet(Name ="GetAllUser")]
+        [HttpGet("GetAllUsers")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-
         public async Task<ActionResult<APIResponse>> GetUsers()
         {
             try
@@ -52,12 +64,14 @@ namespace UsersWebApi.Controllers
             return _response;
         }
 
-        [HttpGet("age",Name = "GetAllUserOnAge")]
-        [Authorize(Roles = "Admin")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        /// <summary>
+        /// Получение списка пользователей старше определенного возраста. Доступно админам.
+        /// </summary>
 
+        [HttpGet("GetAllUserByAge")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<APIResponse>> GetUsersOnAge(int age)
         {
             try
@@ -75,13 +89,15 @@ namespace UsersWebApi.Controllers
             return _response;
         }
 
-        [HttpGet("admin/login", Name ="GetUser")]
+        /// <summary>
+        /// Получение пользователя по логину. Доступно админу.
+        /// </summary>
+
+        [HttpGet("GetUser")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<APIResponse>> GetUser([FromBody] string login)
+        public async Task<ActionResult<APIResponse>> GetUser(string login)
         {
             try
             {
@@ -105,10 +121,13 @@ namespace UsersWebApi.Controllers
             
         }
 
-        [HttpGet("login", Name = "GetUserByLoginAndPassword")]
+        /// <summary>
+        /// Запрос пользователя по логину и паролю. Доступно всем активным пользователям.
+        /// </summary>
+
+        [HttpGet("User")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<APIResponse>> GetUser([FromBody] UserDTO userDTO)
@@ -143,7 +162,11 @@ namespace UsersWebApi.Controllers
 
         //POST
 
-        [HttpPost(Name = "CreateUser")]
+        /// <summary>
+        /// Создание пользователя. Доступно админу
+        /// </summary>
+        /// 
+        [HttpPost("Create")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -191,10 +214,14 @@ namespace UsersWebApi.Controllers
 
         //PUT
 
-        [HttpPut(Name = "UpdateUser")]
+        /// <summary>
+        /// Обновление пользователя. Доступно всем активным пользователям.
+        /// </summary>
+
+        [HttpPut("UpdateUser")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<APIResponse>> UpdateUser(UserUpdateDTO userUpdate)
+        public async Task<ActionResult<APIResponse>> UpdateUser([FromBody] UserUpdateDTO userUpdate)
         {
             try
             {
@@ -216,10 +243,15 @@ namespace UsersWebApi.Controllers
             }
         }
 
-        [HttpPut("admin/{login}",Name = "UpdateUserByAdmin")]
+
+        /// <summary>
+        /// Обновление пользователей. Доступно админу.
+        /// </summary>
+
+        [HttpPut("UpdateUserByAdmin")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<APIResponse>> UpdateUserByAdmin(string login,UserUpdateDTO userUpdate)
+        public async Task<ActionResult<APIResponse>> UpdateUserByAdmin(string login, [FromBody] UserUpdateDTO userUpdate)
         {
             try
             {
@@ -241,7 +273,11 @@ namespace UsersWebApi.Controllers
             }
         }
 
-        [HttpPut("password",Name = "UpdatePassword")]
+        /// <summary>
+        /// Обновление пароля пользователя. Доступно всем активным пользователям.
+        /// </summary>
+
+        [HttpPut("UpdatePassword")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<APIResponse>> UpdatePassword([FromBody]string newPassword)
@@ -266,13 +302,21 @@ namespace UsersWebApi.Controllers
             }
         }
 
-        [HttpPut("admin/password", Name = "UpdatePasswordByAdmin")]
+        /// <summary>
+        /// Обновление пароля пользователей. Доступно админу.
+        /// </summary>
+
+        [HttpPut("UpdatePasswordByAdmin")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<APIResponse>> UpdatePassword(UserUpdatePasswordDTO userUpdatePasswordDTO)
+        public async Task<ActionResult<APIResponse>> UpdatePassword([FromBody] UserUpdatePasswordDTO userUpdatePasswordDTO)
         {
             try
             {
+                if(userUpdatePasswordDTO == null)
+                {
+                    return BadRequest(userUpdatePasswordDTO);
+                }
                 User? user = await _userRepository.UpdatePasswordAsync(userUpdatePasswordDTO.Login, userUpdatePasswordDTO.NewPassword, authUserLogin);
                 if (user == null)
                 {
@@ -291,12 +335,15 @@ namespace UsersWebApi.Controllers
             }
         }
 
+        /// <summary>
+        /// Обновление логина пользователя. Доступно всем активным пользователям.
+        /// </summary>
 
-        [HttpPut("login", Name = "UpdateLogin")]
+        [HttpPut("UpdateLogin")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<APIResponse>> UpdateLogin([FromBody] string newLogin)
+        public async Task<ActionResult<APIResponse>> UpdateLogin(string newLogin)
         {
             try
             {
@@ -306,7 +353,7 @@ namespace UsersWebApi.Controllers
                     return BadRequest(ModelState);
                 }
 
-                User? user = await _userRepository.UpdateLoginAsync(newLogin);
+                User? user = await _userRepository.UpdateLoginAsync(authUserLogin,newLogin);
                 if (user == null)
                 {
                     return NotFound();
@@ -324,43 +371,50 @@ namespace UsersWebApi.Controllers
             }
         }
 
-      //  [HttpPut("login", Name = "UpdateLogin")]
-      //  [Authorize]
-      //  [ProducesResponseType(StatusCodes.Status404NotFound)]
-      //  [ProducesResponseType(StatusCodes.Status400BadRequest)]
-      //  public async Task<ActionResult<APIResponse>> UpdateLoginByAdmin(string login,[FromBody] string newLogin)
-      //  {
-      //      try
-      //      {
-      //          if (_userRepository.IsUniqueLogin(newLogin))
-      //          {
-      //              ModelState.AddModelError("CustomError", "User alredy Exists!");
-      //              return BadRequest(ModelState);
-      //          }
-      //
-      //          User? user = await _userRepository.UpdateLoginAsync(newLogin);
-      //          if (user == null)
-      //          {
-      //              return NotFound();
-      //          }
-      //          _response.StatusCode = HttpStatusCode.NoContent;
-      //          _response.IsSuccess = true;
-      //          return Ok(_response);
-      //      }
-      //      catch (Exception ex)
-      //      {
-      //          _response.IsSuccess = false;
-      //          _response.ErrorMessages
-      //               = new List<string>() { ex.ToString() };
-      //          return _response;
-      //      }
-      //  }
+        /// <summary>
+        /// Обновление логина пользователей. Доступно админу.
+        /// </summary>
+        /// 
+        [HttpPut("UpdateLoginByAdmin")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<APIResponse>> UpdateLoginByAdmin(string userLogin, string newLogin)
+        {
+            try
+            {
+                if (_userRepository.IsUniqueLogin(newLogin))
+                {
+                    ModelState.AddModelError("CustomError", "User alredy Exists!");
+                    return BadRequest(ModelState);
+                }
+       
+                User? user = await _userRepository.UpdateLoginAsync(userLogin, newLogin, authUserLogin);
+                if (user == null)
+                {
+                    return NotFound();
+                }
+                _response.StatusCode = HttpStatusCode.NoContent;
+                _response.IsSuccess = true;
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                     = new List<string>() { ex.ToString() };
+                return _response;
+            }
+        }
 
+        /// <summary>
+        /// Восстановление пользователя. Доступно админу.
+        /// </summary>
 
-        [HttpPut("recovery", Name = "RecoveryUser")]
+        [HttpPut("RecoveryUser")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<APIResponse>> RecoveryUser([FromBody] string login)
+        public async Task<ActionResult<APIResponse>> RecoveryUser(string login)
         {
             try
             {
@@ -381,14 +435,18 @@ namespace UsersWebApi.Controllers
                 return _response;
             }
         }
-        
+
 
         //DELETE
 
-        [HttpDelete("admin/login", Name ="DeleteUser")]
+        /// <summary>
+        /// Мягкое или жесткое удаление пользователя. Доступно админу.
+        /// </summary>
+
+        [HttpDelete("DeleteUser")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<APIResponse>> DeleteUser([FromBody] string login, DeletedType deletedType)
+        public async Task<ActionResult<APIResponse>> DeleteUser(string login, DeletedType deletedType)
         {
             try
             {
