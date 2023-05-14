@@ -364,7 +364,7 @@ namespace UsersWebApi.Controllers
             {
                 if (!_userRepository.IsUniqueLogin(newLogin))
                 {
-                    ModelState.AddModelError("CustomError", "User alredy Exists!");
+                    ModelState.AddModelError("CustomError", "User with this username already exists!");
                     return BadRequest(ModelState);
                 }
 
@@ -402,7 +402,7 @@ namespace UsersWebApi.Controllers
             {
                 if (!_userRepository.IsUniqueLogin(newLogin))
                 {
-                    ModelState.AddModelError("CustomError", "User alredy Exists!");
+                    ModelState.AddModelError("CustomError", "User with this username already exists!");
                     return BadRequest(ModelState);
                 }
        
