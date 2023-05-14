@@ -3,6 +3,7 @@
     public interface IUserRepository
     {
         bool IsUniqueLogin(string login);
+        User GetUserById(Guid id);
         Task<LoginResponseDTO> Login(LoginRequestDTO loginRequestDTO);
         Task<User> Register(RegistrationRequestDTO registrationRequestDTO);
 

@@ -21,6 +21,8 @@ namespace UsersWebApi.Repository
             return user == null;
         }
 
+        public User? GetUserById(Guid id) => _context.Users.FirstOrDefault(u => u.Id == id);
+
         public async Task<LoginResponseDTO> Login(LoginRequestDTO loginRequestDTO)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Login.ToLower() == loginRequestDTO.Login.ToLower() &&
@@ -43,7 +45,7 @@ namespace UsersWebApi.Repository
             {
                 Subject = new ClaimsIdentity(new Claim[]
                 {
-                    new Claim(ClaimTypes.Name, user.Login.ToString()),
+                    new Claim(ClaimTypes.Name, user.Id.ToString()),
                     new Claim(ClaimTypes.Role, role)
                 }),
                 Expires = DateTime.UtcNow.AddDays(7),
@@ -232,7 +234,6 @@ namespace UsersWebApi.Repository
             await _context.SaveChangesAsync();
             return user;
         }
-
 
     }
 }
