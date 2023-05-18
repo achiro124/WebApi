@@ -1,8 +1,4 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.JsonPatch;
-using System.Security.Claims;
-using UsersWebApi.Models;
-using UsersWebApi.Repository;
 
 namespace UsersWebApi.Controllers
 {
@@ -36,8 +32,6 @@ namespace UsersWebApi.Controllers
             var user =  _userRepository.GetUserById(id);
             authUserLogin = user.Login;
         }
-
-
 
 
         //GET
@@ -205,6 +199,25 @@ namespace UsersWebApi.Controllers
                     return BadRequest(ModelState);
                 }
 
+                if (!_userRepository.RegexLoginOrPassword(createDTO.Login))
+                {
+                    ModelState.AddModelError("CustomError", "Login may only contain Latin letters and numbers!");
+                    return BadRequest(ModelState);
+                }
+
+                if (!_userRepository.RegexLoginOrPassword(createDTO.Password))
+                {
+                    ModelState.AddModelError("CustomError", "Password may only contain Latin letters and numbers!");
+                    return BadRequest(ModelState);
+                }
+
+                if (!_userRepository.RegexName(createDTO.Name))
+                {
+                    ModelState.AddModelError("CustomError", "The name can only contain Latin and Russian letters!");
+                    return BadRequest(ModelState);
+                }
+
+
                 User? user = await _userRepository.CreateAsync(createDTO, authUserLogin);
                 if (user == null)
                 {
@@ -238,6 +251,19 @@ namespace UsersWebApi.Controllers
         {
             try
             {
+
+                if(userUpdate == null)
+                {
+                    return BadRequest(userUpdate);
+                }
+
+                if (userUpdate.Name != null && !_userRepository.RegexName(userUpdate.Name))
+                {
+                    ModelState.AddModelError("CustomError", "The name can only contain Latin and Russian letters!");
+                    return BadRequest(ModelState);
+                }
+
+
                 User? user = await _userRepository.UpdateUserAsync(authUserLogin, userUpdate);
                 if (user == null)
                 {
@@ -269,6 +295,20 @@ namespace UsersWebApi.Controllers
         {
             try
             {
+
+                if (userUpdate == null)
+                {
+                    return BadRequest(userUpdate);
+                }
+
+                if (userUpdate.Name != null && !_userRepository.RegexName(userUpdate.Name))
+                {
+                    ModelState.AddModelError("CustomError", "The name can only contain Latin and Russian letters!");
+                    return BadRequest(ModelState);
+                }
+
+
+
                 User? user = await _userRepository.UpdateUserAsync(login, userUpdate, authUserLogin);
                 if (user == null)
                 {
@@ -298,6 +338,14 @@ namespace UsersWebApi.Controllers
         {
             try
             {
+
+                if (!_userRepository.RegexLoginOrPassword(newPassword))
+                {
+                    ModelState.AddModelError("CustomError", "Login may only contain Latin letters and numbers!");
+                    return BadRequest(ModelState);
+                }
+
+
                 User? user = await _userRepository.UpdatePasswordAsync(authUserLogin, newPassword);
                 if (user == null)
                 {
@@ -332,6 +380,14 @@ namespace UsersWebApi.Controllers
                 {
                     return BadRequest(userUpdatePasswordDTO);
                 }
+
+                if (userUpdatePasswordDTO.NewPassword != null && !_userRepository.RegexLoginOrPassword(userUpdatePasswordDTO.NewPassword))
+                {
+                    ModelState.AddModelError("CustomError", "Login may only contain Latin letters and numbers!");
+                    return BadRequest(ModelState);
+                }
+
+
                 User? user = await _userRepository.UpdatePasswordAsync(userUpdatePasswordDTO.Login, userUpdatePasswordDTO.NewPassword, authUserLogin);
                 if (user == null)
                 {
@@ -367,6 +423,13 @@ namespace UsersWebApi.Controllers
                     ModelState.AddModelError("CustomError", "User with this username already exists!");
                     return BadRequest(ModelState);
                 }
+
+                if (!_userRepository.RegexLoginOrPassword(newLogin))
+                {
+                    ModelState.AddModelError("CustomError", "Login may only contain Latin letters and numbers!");
+                    return BadRequest(ModelState);
+                }
+
 
                 User? user = await _userRepository.UpdateLoginAsync(authUserLogin,newLogin);
                 if (user == null)
@@ -405,7 +468,13 @@ namespace UsersWebApi.Controllers
                     ModelState.AddModelError("CustomError", "User with this username already exists!");
                     return BadRequest(ModelState);
                 }
-       
+
+                if (!_userRepository.RegexLoginOrPassword(newLogin))
+                {
+                    ModelState.AddModelError("CustomError", "Login may only contain Latin letters and numbers!");
+                    return BadRequest(ModelState);
+                }
+
                 User? user = await _userRepository.UpdateLoginAsync(userLogin, newLogin, authUserLogin);
                 if (user == null)
                 {

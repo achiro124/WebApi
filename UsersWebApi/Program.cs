@@ -1,13 +1,4 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using System.Security.Cryptography;
-using System.Text.Json.Serialization;
-using UsersWebApi;
-using System.Text.Json;
-using Newtonsoft.Json.Converters;
-using System.Reflection;
-using Newtonsoft.Json.Serialization;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +23,8 @@ builder.Services.AddSwaggerGen(options =>
     var basePath = AppContext.BaseDirectory;
     var xmlPath = Path.Combine(basePath, "UsersWebApi.xml");
     options.IncludeXmlComments(xmlPath);
+
+
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -64,6 +57,7 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddControllers().AddNewtonsoftJson(options =>
         options.SerializerSettings.Converters.Add(new StringEnumConverter()));
+
 builder.Services.AddSwaggerGenNewtonsoftSupport();
 
 

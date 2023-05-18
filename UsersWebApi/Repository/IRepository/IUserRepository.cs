@@ -1,8 +1,12 @@
-﻿namespace UsersWebApi.Repository.IRepository
+﻿using System.Text.RegularExpressions;
+
+namespace UsersWebApi.Repository.IRepository
 {
     public interface IUserRepository
     {
         bool IsUniqueLogin(string login);
+        bool RegexLoginOrPassword(string str);
+        bool RegexName(string str);
         User GetUserById(Guid id);
         Task<LoginResponseDTO> Login(LoginRequestDTO loginRequestDTO);
         Task<User> Register(RegistrationRequestDTO registrationRequestDTO);

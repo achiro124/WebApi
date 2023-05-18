@@ -1,9 +1,4 @@
-﻿
-
-using Microsoft.IdentityModel.Tokens;
-using System.Security.Claims;
-
-namespace UsersWebApi.Repository
+﻿namespace UsersWebApi.Repository
 {
     public class UserRepository : IUserRepository
     {
@@ -19,6 +14,19 @@ namespace UsersWebApi.Repository
         {
             var user = _context.Users.FirstOrDefault(u => u.Login == login);
             return user == null;
+        }
+
+        //Regex
+        public bool RegexLoginOrPassword(string str)
+        {
+            string pattern = "^[a-zA-Z0-9]+$";
+            return Regex.IsMatch(str, pattern);
+        }
+
+        public bool RegexName(string str)
+        {
+            string pattern = "^[a-zA-Zа-яА-Я]+$";
+            return Regex.IsMatch(str, pattern);
         }
 
         public User? GetUserById(Guid id) => _context.Users.FirstOrDefault(u => u.Id == id);
